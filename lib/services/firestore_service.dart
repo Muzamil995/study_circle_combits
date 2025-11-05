@@ -5,6 +5,10 @@ import 'package:study_circle/models/study_session_model.dart';
 import 'package:study_circle/models/join_request_model.dart';
 import 'package:study_circle/models/resource_model.dart';
 import 'package:study_circle/models/rsvp_model.dart';
+import 'package:study_circle/models/achievement_model.dart';
+import 'package:study_circle/models/user_stats_model.dart';
+import 'package:study_circle/models/group_analytics_model.dart';
+import 'package:study_circle/services/gamification_service.dart';
 import 'package:study_circle/utils/logger.dart';
 
 class FirestoreService {
@@ -16,6 +20,9 @@ class FirestoreService {
   CollectionReference get _sessionsCollection => _firestore.collection('study_sessions');
   CollectionReference get _requestsCollection => _firestore.collection('join_requests');
   CollectionReference get _resourcesCollection => _firestore.collection('resources');
+  CollectionReference get _achievementsCollection => _firestore.collection('achievements');
+  CollectionReference get _userStatsCollection => _firestore.collection('user_stats');
+  CollectionReference get _groupAnalyticsCollection => _firestore.collection('group_analytics');
 
   // ==================== USER OPERATIONS ====================
 
@@ -92,6 +99,10 @@ class FirestoreService {
         'joinedGroupIds': FieldValue.arrayUnion([groupId]),
         'createdGroupIds': FieldValue.arrayUnion([groupId]),
       });
+      
+      // Track group creation for gamification
+      final gamificationService = GamificationService();
+      await gamificationService.trackGroupCreated(group.creatorId);
       
       AppLogger.info('User group IDs updated successfully');
       return groupId;
@@ -235,6 +246,10 @@ class FirestoreService {
         'joinedGroupIds': FieldValue.arrayUnion([groupId]),
       });
       
+      // Track group joined for gamification
+      final gamificationService = GamificationService();
+      await gamificationService.trackGroupJoined(userId);
+      
       AppLogger.info('User joined group successfully');
     } catch (e, stackTrace) {
       AppLogger.error('Failed to join group', e, stackTrace);
@@ -339,6 +354,10 @@ class FirestoreService {
       await _usersCollection.doc(userId).update({
         'joinedGroupIds': FieldValue.arrayUnion([groupId]),
       });
+      
+      // Track group joined for gamification
+      final gamificationService = GamificationService();
+      await gamificationService.trackGroupJoined(userId);
       
       AppLogger.info('Join request approved successfully');
     } catch (e, stackTrace) {
@@ -484,6 +503,12 @@ class FirestoreService {
         'updatedAt': FieldValue.serverTimestamp(),
       });
       
+      // Track session attendance for gamification when status is attending
+      if (status == RsvpStatus.attending) {
+        final gamificationService = GamificationService();
+        await gamificationService.trackSessionAttended(userId);
+      }
+      
       AppLogger.info('RSVP updated successfully');
     } catch (e, stackTrace) {
       AppLogger.error('Failed to update RSVP', e, stackTrace);
@@ -569,6 +594,11 @@ class FirestoreService {
       AppLogger.info('Uploading resource: ${resource.fileName}');
       final docRef = await _resourcesCollection.add(resource.toFirestore());
       AppLogger.info('Resource uploaded: ${docRef.id}');
+      
+      // Track resource upload for gamification
+      final gamificationService = GamificationService();
+      await gamificationService.trackResourceUploaded(resource.uploadedBy);
+      
       return docRef.id;
     } catch (e, stackTrace) {
       AppLogger.error('Failed to upload resource', e, stackTrace);
@@ -596,6 +626,347 @@ class FirestoreService {
     } catch (e, stackTrace) {
       AppLogger.error('Failed to delete resource', e, stackTrace);
       throw 'Failed to delete resource. Please try again.';
+    }
+  }
+
+  // ==================== GAMIFICATION OPERATIONS ====================
+
+  // Initialize user stats for new user
+  Future<void> initializeUserStats(String userId) async {
+    try {
+      AppLogger.info('Initializing user stats: $userId');
+      final stats = UserStatsModel(userId: userId);
+      await _userStatsCollection.doc(userId).set(stats.toFirestore());
+      AppLogger.info('User stats initialized successfully');
+    } catch (e, stackTrace) {
+      AppLogger.error('Failed to initialize user stats', e, stackTrace);
+      // Don't throw - this is not critical
+    }
+  }
+
+  // Get user stats
+  Future<UserStatsModel?> getUserStats(String userId) async {
+    try {
+      final doc = await _userStatsCollection.doc(userId).get();
+      if (doc.exists) {
+        return UserStatsModel.fromFirestore(doc);
+      }
+      // Initialize if doesn't exist
+      await initializeUserStats(userId);
+      return UserStatsModel(userId: userId);
+    } catch (e, stackTrace) {
+      AppLogger.error('Failed to get user stats', e, stackTrace);
+      return null;
+    }
+  }
+
+  // Get user stats stream
+  Stream<UserStatsModel?> getUserStatsStream(String userId) {
+    return _userStatsCollection.doc(userId).snapshots().map((doc) {
+      if (doc.exists) {
+        return UserStatsModel.fromFirestore(doc);
+      }
+      return UserStatsModel(userId: userId);
+    });
+  }
+
+  // Update user stats
+  Future<void> updateUserStats(String userId, Map<String, dynamic> updates) async {
+    try {
+      AppLogger.info('Updating user stats: $userId');
+      updates['updatedAt'] = Timestamp.now();
+      await _userStatsCollection.doc(userId).set(updates, SetOptions(merge: true));
+      AppLogger.info('User stats updated successfully');
+    } catch (e, stackTrace) {
+      AppLogger.error('Failed to update user stats', e, stackTrace);
+      // Don't throw - this is not critical
+    }
+  }
+
+  // Update streak for user
+  Future<void> updateUserStreak(String userId) async {
+    try {
+      final stats = await getUserStats(userId);
+      if (stats == null) return;
+
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      
+      int newStreak = stats.currentStreak;
+      
+      if (stats.lastActivityDate != null) {
+        final lastActivity = DateTime(
+          stats.lastActivityDate!.year,
+          stats.lastActivityDate!.month,
+          stats.lastActivityDate!.day,
+        );
+        
+        final difference = today.difference(lastActivity).inDays;
+        
+        if (difference == 1) {
+          // Consecutive day - increment streak
+          newStreak = stats.currentStreak + 1;
+        } else if (difference > 1) {
+          // Streak broken - reset
+          newStreak = 1;
+        }
+        // If same day, keep current streak
+      } else {
+        // First activity
+        newStreak = 1;
+      }
+
+      final longestStreak = newStreak > stats.longestStreak ? newStreak : stats.longestStreak;
+
+      await updateUserStats(userId, {
+        'currentStreak': newStreak,
+        'longestStreak': longestStreak,
+        'lastActivityDate': Timestamp.fromDate(now),
+      });
+    } catch (e, stackTrace) {
+      AppLogger.error('Failed to update user streak', e, stackTrace);
+    }
+  }
+
+  // Get user achievements
+  Stream<List<AchievementModel>> getUserAchievements(String userId) {
+    return _achievementsCollection
+        .where('userId', isEqualTo: userId)
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+            .map((doc) => AchievementModel.fromFirestore(doc))
+            .toList());
+  }
+
+  // Initialize default achievements for user
+  Future<void> initializeUserAchievements(String userId) async {
+    try {
+      AppLogger.info('Initializing achievements for user: $userId');
+      
+      final defaultAchievements = [
+        AchievementModel(
+          id: '',
+          userId: userId,
+          type: 'sessions_attended',
+          title: 'First Session',
+          description: 'Attend your first study session',
+          iconName: 'school',
+          targetValue: 1,
+        ),
+        AchievementModel(
+          id: '',
+          userId: userId,
+          type: 'sessions_attended',
+          title: 'Study Enthusiast',
+          description: 'Attend 5 study sessions',
+          iconName: 'local_library',
+          targetValue: 5,
+        ),
+        AchievementModel(
+          id: '',
+          userId: userId,
+          type: 'sessions_attended',
+          title: 'Study Master',
+          description: 'Attend 20 study sessions',
+          iconName: 'emoji_events',
+          targetValue: 20,
+        ),
+        AchievementModel(
+          id: '',
+          userId: userId,
+          type: 'groups_joined',
+          title: 'Social Learner',
+          description: 'Join 3 study groups',
+          iconName: 'group_add',
+          targetValue: 3,
+        ),
+        AchievementModel(
+          id: '',
+          userId: userId,
+          type: 'streak',
+          title: 'Dedicated Student',
+          description: 'Maintain a 7-day streak',
+          iconName: 'local_fire_department',
+          targetValue: 7,
+        ),
+        AchievementModel(
+          id: '',
+          userId: userId,
+          type: 'resources_uploaded',
+          title: 'Knowledge Sharer',
+          description: 'Upload 5 resources',
+          iconName: 'upload_file',
+          targetValue: 5,
+        ),
+      ];
+
+      for (final achievement in defaultAchievements) {
+        await _achievementsCollection.add(achievement.toFirestore());
+      }
+      
+      AppLogger.info('Achievements initialized successfully');
+    } catch (e, stackTrace) {
+      AppLogger.error('Failed to initialize achievements', e, stackTrace);
+    }
+  }
+
+  // Check and update achievements
+  Future<void> checkAndUpdateAchievements(String userId) async {
+    try {
+      final stats = await getUserStats(userId);
+      if (stats == null) return;
+
+      final achievementsSnapshot = await _achievementsCollection
+          .where('userId', isEqualTo: userId)
+          .get();
+
+      for (final doc in achievementsSnapshot.docs) {
+        final achievement = AchievementModel.fromFirestore(doc);
+        if (achievement.isUnlocked) continue;
+
+        int currentValue = 0;
+        switch (achievement.type) {
+          case 'sessions_attended':
+            currentValue = stats.totalSessionsAttended;
+            break;
+          case 'groups_joined':
+            currentValue = stats.totalGroupsJoined;
+            break;
+          case 'streak':
+            currentValue = stats.currentStreak;
+            break;
+          case 'resources_uploaded':
+            currentValue = stats.totalResourcesUploaded;
+            break;
+        }
+
+        if (currentValue >= achievement.targetValue && !achievement.isUnlocked) {
+          // Unlock achievement
+          await _achievementsCollection.doc(doc.id).update({
+            'currentValue': currentValue,
+            'isUnlocked': true,
+            'unlockedAt': Timestamp.now(),
+          });
+          AppLogger.info('Achievement unlocked: ${achievement.title}');
+        } else {
+          // Update progress
+          await _achievementsCollection.doc(doc.id).update({
+            'currentValue': currentValue,
+          });
+        }
+      }
+    } catch (e, stackTrace) {
+      AppLogger.error('Failed to check achievements', e, stackTrace);
+    }
+  }
+
+  // ==================== ANALYTICS OPERATIONS ====================
+
+  // Get or create group analytics
+  Future<GroupAnalyticsModel> getGroupAnalytics(String groupId) async {
+    try {
+      final doc = await _groupAnalyticsCollection.doc(groupId).get();
+      if (doc.exists) {
+        return GroupAnalyticsModel.fromFirestore(doc);
+      }
+      // Create new analytics
+      final analytics = GroupAnalyticsModel(groupId: groupId);
+      await _groupAnalyticsCollection.doc(groupId).set(analytics.toFirestore());
+      return analytics;
+    } catch (e, stackTrace) {
+      AppLogger.error('Failed to get group analytics', e, stackTrace);
+      return GroupAnalyticsModel(groupId: groupId);
+    }
+  }
+
+  // Get group analytics stream
+  Stream<GroupAnalyticsModel> getGroupAnalyticsStream(String groupId) {
+    return _groupAnalyticsCollection.doc(groupId).snapshots().map((doc) {
+      if (doc.exists) {
+        return GroupAnalyticsModel.fromFirestore(doc);
+      }
+      return GroupAnalyticsModel(groupId: groupId);
+    });
+  }
+
+  // Update group analytics
+  Future<void> updateGroupAnalytics(String groupId) async {
+    try {
+      AppLogger.info('Updating analytics for group: $groupId');
+      
+      final group = await getStudyGroupById(groupId);
+      if (group == null) return;
+
+      final sessionsSnapshot = await _sessionsCollection
+          .where('groupId', isEqualTo: groupId)
+          .get();
+      
+      final resourcesSnapshot = await _resourcesCollection
+          .where('groupId', isEqualTo: groupId)
+          .get();
+
+      int totalAttendance = 0;
+      int sessionCount = 0;
+      final Map<String, int> activityScores = {};
+      final Map<String, int> attendanceTrend = {};
+
+      for (final sessionDoc in sessionsSnapshot.docs) {
+        final session = StudySessionModel.fromFirestore(sessionDoc);
+        // Only count completed sessions or sessions in the past
+        if (session.dateTime.isBefore(DateTime.now())) {
+          sessionCount++;
+          final attendingCount = session.attendingCount;
+          totalAttendance += attendingCount;
+          
+          // Track attendance by date
+          final dateKey = '${session.dateTime.year}-${session.dateTime.month}-${session.dateTime.day}';
+          attendanceTrend[dateKey] = (attendanceTrend[dateKey] ?? 0) + attendingCount;
+          
+          // Add points for attendees (those with attending status)
+          for (final entry in session.rsvps.entries) {
+            if (entry.value.status == RsvpStatus.attending) {
+              activityScores[entry.key] = (activityScores[entry.key] ?? 0) + 10;
+            }
+          }
+        }
+      }
+
+      // Add points for resource uploads
+      for (final resourceDoc in resourcesSnapshot.docs) {
+        final resource = ResourceModel.fromFirestore(resourceDoc);
+        activityScores[resource.uploadedBy] = (activityScores[resource.uploadedBy] ?? 0) + 5;
+      }
+
+      // Calculate average attendance
+      final averageAttendance = sessionCount > 0 && group.memberIds.isNotEmpty
+          ? (totalAttendance / (sessionCount * group.memberIds.length)) * 100
+          : 0.0;
+
+      // Get top 3 contributors
+      final sortedContributors = activityScores.entries.toList()
+        ..sort((a, b) => b.value.compareTo(a.value));
+      final topContributors = sortedContributors.take(3).map((e) => e.key).toList();
+
+      final analytics = GroupAnalyticsModel(
+        groupId: groupId,
+        totalSessions: sessionsSnapshot.docs.length,
+        totalMembers: group.memberIds.length,
+        totalResources: resourcesSnapshot.docs.length,
+        averageAttendance: averageAttendance,
+        memberActivityScores: activityScores,
+        topContributorIds: topContributors,
+        sessionAttendanceTrend: attendanceTrend,
+      );
+
+      await _groupAnalyticsCollection.doc(groupId).set(
+        analytics.toFirestore(),
+        SetOptions(merge: true),
+      );
+      
+      AppLogger.info('Group analytics updated successfully');
+    } catch (e, stackTrace) {
+      AppLogger.error('Failed to update group analytics', e, stackTrace);
     }
   }
 }

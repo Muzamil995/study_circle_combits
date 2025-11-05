@@ -88,6 +88,20 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       actions: [
         IconButton(
+          icon: const Icon(Icons.emoji_events),
+          tooltip: 'Achievements',
+          onPressed: () {
+            Navigator.pushNamed(context, '/achievements');
+          },
+        ),
+        IconButton(
+          icon: const Icon(Icons.calendar_month),
+          tooltip: 'Calendar',
+          onPressed: () {
+            Navigator.pushNamed(context, '/calendar');
+          },
+        ),
+        IconButton(
           icon: Icon(
             context.watch<ThemeProvider>().isDarkMode
                 ? Icons.light_mode

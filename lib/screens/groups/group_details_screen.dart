@@ -35,7 +35,7 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen>
     _tabController = TabController(length: 4, vsync: this);
     _tabController.addListener(() {
       if (!_tabController.indexIsChanging) {
-        setState(() {}); // Rebuild to update FAB visibility
+        setState(() {});
       }
     });
   }
@@ -78,7 +78,8 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen>
         }
 
         final isMember = currentUser != null && group.isMember(currentUser.uid);
-        final isCreator = currentUser != null && group.isCreator(currentUser.uid);
+        final isCreator =
+            currentUser != null && group.isCreator(currentUser.uid);
 
         return Scaffold(
           appBar: _buildAppBar(group, isCreator),
@@ -99,28 +100,36 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen>
               ),
             ],
           ),
-          floatingActionButton: isMember && (_tabController.index == 2 || _tabController.index == 3)
+          floatingActionButton:
+              isMember &&
+                  (_tabController.index == 2 || _tabController.index == 3)
               ? FloatingActionButton.extended(
                   onPressed: () {
                     if (_tabController.index == 2) {
                       Navigator.pushNamed(
                         context,
                         '/create-session',
-                        arguments: {
-                          'group': group,
-                          'session': null,
-                        },
+                        arguments: {'group': group, 'session': null},
                       );
                     } else if (_tabController.index == 3) {
                       _showUploadResourceDialog(group, currentUser);
                     }
                   },
                   backgroundColor: AppColors.primary,
-                  icon: Icon(_tabController.index == 2 ? Icons.add : Icons.upload_file),
-                  label: Text(_tabController.index == 2 ? 'New Session' : 'Upload File'),
+                  icon: Icon(
+                    _tabController.index == 2 ? Icons.add : Icons.upload_file,
+                  ),
+                  label: Text(
+                    _tabController.index == 2 ? 'New Session' : 'Upload File',
+                  ),
                 )
               : null,
-          bottomNavigationBar: _buildBottomBar(group, isMember, isCreator, currentUser?.uid),
+          bottomNavigationBar: _buildBottomBar(
+            group,
+            isMember,
+            isCreator,
+            currentUser?.uid,
+          ),
         );
       },
     );
@@ -130,12 +139,21 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen>
     return AppBar(
       title: const Text(
         'Group Details',
-        style: TextStyle(
-          fontWeight: FontWeight.bold,
-          fontFamily: 'Poppins',
-        ),
+        style: TextStyle(fontWeight: FontWeight.bold, fontFamily: 'Poppins'),
       ),
       actions: [
+        if (isCreator)
+          IconButton(
+            icon: const Icon(Icons.analytics),
+            tooltip: 'View Analytics',
+            onPressed: () {
+              Navigator.pushNamed(
+                context,
+                '/group-analytics',
+                arguments: group,
+              );
+            },
+          ),
         if (isCreator && !group.isPublic)
           StreamBuilder<List<JoinRequestModel>>(
             stream: _firestoreService.getGroupJoinRequests(group.id),
@@ -190,11 +208,7 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen>
           IconButton(
             icon: const Icon(Icons.edit),
             onPressed: () {
-              Navigator.pushNamed(
-                context,
-                '/edit-group',
-                arguments: group,
-              );
+              Navigator.pushNamed(context, '/edit-group', arguments: group);
             },
           ),
         PopupMenuButton(
@@ -254,11 +268,7 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen>
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(
-                  Icons.groups,
-                  size: 32,
-                  color: AppColors.primary,
-                ),
+                child: Icon(Icons.groups, size: 32, color: AppColors.primary),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -348,10 +358,7 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen>
             const SizedBox(height: 2),
             Text(
               label,
-              style: const TextStyle(
-                fontSize: 11,
-                color: Colors.white70,
-              ),
+              style: const TextStyle(fontSize: 11, color: Colors.white70),
             ),
           ],
         ),
@@ -436,21 +443,12 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen>
           ),
         ),
         const SizedBox(height: 8),
-        Text(
-          content,
-          style: TextStyle(
-            fontSize: 14,
-            color: AppColors.gray700,
-          ),
-        ),
+        Text(content, style: TextStyle(fontSize: 14, color: AppColors.gray700)),
         if (subtitle != null) ...[
           const SizedBox(height: 4),
           Text(
             subtitle,
-            style: TextStyle(
-              fontSize: 12,
-              color: AppColors.gray500,
-            ),
+            style: TextStyle(fontSize: 12, color: AppColors.gray500),
           ),
         ],
       ],
@@ -485,7 +483,10 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen>
               ? Chip(
                   label: const Text('Creator'),
                   backgroundColor: AppColors.primary,
-                  labelStyle: const TextStyle(color: Colors.white, fontSize: 12),
+                  labelStyle: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                  ),
                   padding: EdgeInsets.zero,
                 )
               : null,
@@ -501,11 +502,15 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen>
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
-        
+
         final sessions = snapshot.data ?? [];
         final now = DateTime.now();
-        final upcomingSessions = sessions.where((s) => s.dateTime.isAfter(now)).length;
-        final pastSessions = sessions.where((s) => s.dateTime.isBefore(now)).length;
+        final upcomingSessions = sessions
+            .where((s) => s.dateTime.isAfter(now))
+            .length;
+        final pastSessions = sessions
+            .where((s) => s.dateTime.isBefore(now))
+            .length;
 
         return Center(
           child: Padding(
@@ -529,19 +534,24 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen>
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      _buildSessionCount(upcomingSessions, 'Upcoming', AppColors.primary),
+                      _buildSessionCount(
+                        upcomingSessions,
+                        'Upcoming',
+                        AppColors.primary,
+                      ),
                       const SizedBox(width: 20),
-                      _buildSessionCount(pastSessions, 'Past', AppColors.gray500),
+                      _buildSessionCount(
+                        pastSessions,
+                        'Past',
+                        AppColors.gray500,
+                      ),
                     ],
                   ),
                   const SizedBox(height: 24),
                 ] else ...[
                   Text(
                     'No sessions scheduled yet',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: AppColors.gray600,
-                    ),
+                    style: TextStyle(fontSize: 14, color: AppColors.gray600),
                   ),
                   const SizedBox(height: 24),
                 ],
@@ -558,7 +568,10 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen>
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 12,
+                    ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -584,13 +597,7 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen>
             fontFamily: 'Poppins',
           ),
         ),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 14,
-            color: AppColors.gray600,
-          ),
-        ),
+        Text(label, style: TextStyle(fontSize: 14, color: AppColors.gray600)),
       ],
     );
   }
@@ -602,15 +609,17 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen>
     String? currentUserId,
   ) {
     if (currentUserId == null) return null;
-    if (isCreator) return null; // Creators don't need to join/leave
+    if (isCreator) return null;
 
-    // For non-members of private groups, check if they have a pending request
     if (!isMember && !group.isPublic) {
       return StreamBuilder<bool>(
-        stream: _firestoreService.hasPendingJoinRequestStream(group.id, currentUserId),
+        stream: _firestoreService.hasPendingJoinRequestStream(
+          group.id,
+          currentUserId,
+        ),
         builder: (context, snapshot) {
           final hasPendingRequest = snapshot.data ?? false;
-          
+
           return Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -631,10 +640,16 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen>
                       ? null
                       : () => _joinGroup(group),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: hasPendingRequest ? AppColors.warning : AppColors.primary,
+                    backgroundColor: hasPendingRequest
+                        ? AppColors.warning
+                        : AppColors.primary,
                     foregroundColor: Colors.white,
-                    disabledBackgroundColor: AppColors.warning.withValues(alpha: 0.6),
-                    disabledForegroundColor: Colors.white.withValues(alpha: 0.8),
+                    disabledBackgroundColor: AppColors.warning.withValues(
+                      alpha: 0.6,
+                    ),
+                    disabledForegroundColor: Colors.white.withValues(
+                      alpha: 0.8,
+                    ),
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -646,7 +661,9 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen>
                           width: 20,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
                           ),
                         )
                       : Row(
@@ -654,10 +671,11 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen>
                           children: [
                             if (hasPendingRequest)
                               const Icon(Icons.schedule, size: 20),
-                            if (hasPendingRequest)
-                              const SizedBox(width: 8),
+                            if (hasPendingRequest) const SizedBox(width: 8),
                             Text(
-                              hasPendingRequest ? 'Request Pending' : 'Request to Join',
+                              hasPendingRequest
+                                  ? 'Request Pending'
+                                  : 'Request to Join',
                               style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
@@ -673,7 +691,6 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen>
       );
     }
 
-    // For public groups and members, show regular join/leave button
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -751,10 +768,7 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen>
             Text(
               message,
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14,
-                color: AppColors.gray600,
-              ),
+              style: TextStyle(fontSize: 14, color: AppColors.gray600),
             ),
           ],
         ),
@@ -777,9 +791,8 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen>
 
     try {
       if (group.isPublic) {
-        // Public group: instant join
         await _firestoreService.joinGroup(group.id, currentUser.uid);
-        
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -789,19 +802,18 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen>
           );
         }
       } else {
-        // Private group: send join request
-        // Check if user already has a pending request
         final hasPending = await _firestoreService.hasPendingJoinRequest(
           group.id,
           currentUser.uid,
         );
-        
+
         if (hasPending) {
-          _showErrorSnackBar('You already have a pending request for this group');
+          _showErrorSnackBar(
+            'You already have a pending request for this group',
+          );
           return;
         }
-        
-        // Create join request
+
         final request = JoinRequestModel(
           id: '',
           groupId: group.id,
@@ -812,9 +824,9 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen>
           status: 'pending',
           createdAt: DateTime.now(),
         );
-        
+
         await _firestoreService.createJoinRequest(request);
-        
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -838,9 +850,9 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen>
   Future<void> _leaveGroup(StudyGroupModel group) async {
     final authProvider = context.read<app_auth.AuthProvider>();
     final currentUser = authProvider.userModel;
-    
+
     if (currentUser == null) return;
-    
+
     final confirmed = await _showConfirmDialog(
       'Leave Group',
       'Are you sure you want to leave this group?',
@@ -852,12 +864,10 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen>
 
     try {
       await _firestoreService.leaveGroup(group.id, currentUser.uid);
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('You have left the group'),
-          ),
+          const SnackBar(content: Text('You have left the group')),
         );
         Navigator.pop(context);
       }
@@ -925,10 +935,7 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen>
 
   void _showErrorSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: AppColors.error,
-      ),
+      SnackBar(content: Text(message), backgroundColor: AppColors.error),
     );
   }
 
@@ -951,16 +958,12 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen>
     }
   }
 
-  // ==================== RESOURCES TAB ====================
-
   Widget _buildResourcesTab(StudyGroupModel group) {
     return StreamBuilder<List<ResourceModel>>(
       stream: _firestoreService.getGroupResources(group.id),
       builder: (context, snapshot) {
         if (snapshot.hasError) {
-          return Center(
-            child: Text('Error: ${snapshot.error}'),
-          );
+          return Center(child: Text('Error: ${snapshot.error}'));
         }
 
         if (snapshot.connectionState == ConnectionState.waiting) {
@@ -991,10 +994,7 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen>
                   Text(
                     'Share study materials, notes, and documents with your group members',
                     textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: AppColors.gray600,
-                    ),
+                    style: TextStyle(fontSize: 14, color: AppColors.gray600),
                   ),
                 ],
               ),
@@ -1018,7 +1018,8 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen>
   Widget _buildResourceCard(ResourceModel resource, StudyGroupModel group) {
     final authProvider = context.read<app_auth.AuthProvider>();
     final currentUser = authProvider.userModel;
-    final isUploader = currentUser != null && resource.uploadedBy == currentUser.uid;
+    final isUploader =
+        currentUser != null && resource.uploadedBy == currentUser.uid;
 
     IconData fileIcon;
     Color fileColor;
@@ -1098,10 +1099,7 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen>
                 const SizedBox(height: 12),
                 Text(
                   resource.description,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: AppColors.gray700,
-                  ),
+                  style: TextStyle(fontSize: 14, color: AppColors.gray700),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -1140,7 +1138,10 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen>
                   runSpacing: 6,
                   children: resource.tags.map((tag) {
                     return Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: AppColors.primary.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(4),
@@ -1192,7 +1193,18 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen>
                       onPressed: () async {
                         final result = await FilePicker.platform.pickFiles(
                           type: FileType.custom,
-                          allowedExtensions: ['pdf', 'doc', 'docx', 'ppt', 'pptx', 'jpg', 'jpeg', 'png', 'txt', 'zip'],
+                          allowedExtensions: [
+                            'pdf',
+                            'doc',
+                            'docx',
+                            'ppt',
+                            'pptx',
+                            'jpg',
+                            'jpeg',
+                            'png',
+                            'txt',
+                            'zip',
+                          ],
                         );
 
                         if (result != null) {
@@ -1258,7 +1270,8 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen>
                 child: const Text('Cancel'),
               ),
               ElevatedButton(
-                onPressed: selectedFile == null || titleController.text.trim().isEmpty
+                onPressed:
+                    selectedFile == null || titleController.text.trim().isEmpty
                     ? null
                     : () async {
                         Navigator.pop(dialogContext);
@@ -1295,7 +1308,6 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen>
     String tagsString,
   ) async {
     try {
-      // Show loading
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -1304,7 +1316,10 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen>
                 const SizedBox(
                   width: 20,
                   height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
                 ),
                 const SizedBox(width: 16),
                 const Text('Uploading file...'),
@@ -1315,14 +1330,12 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen>
         );
       }
 
-      // Upload to Cloudinary
       final fileUrl = await CloudinaryConfig.uploadFile(file);
 
       if (fileUrl == null) {
         throw 'Failed to upload file to cloud storage';
       }
 
-      // Determine file type
       final extension = fileName.split('.').last.toLowerCase();
       String fileType;
       if (['jpg', 'jpeg', 'png', 'gif', 'webp'].contains(extension)) {
@@ -1335,12 +1348,14 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen>
         fileType = 'other';
       }
 
-      // Parse tags
       final tags = tagsString.isEmpty
           ? <String>[]
-          : tagsString.split(',').map((t) => t.trim()).where((t) => t.isNotEmpty).toList();
+          : tagsString
+                .split(',')
+                .map((t) => t.trim())
+                .where((t) => t.isNotEmpty)
+                .toList();
 
-      // Create resource model
       final resource = ResourceModel(
         id: '',
         groupId: group.id,
@@ -1356,7 +1371,6 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen>
         tags: tags,
       );
 
-      // Save to Firestore
       await _firestoreService.uploadResource(resource);
 
       if (mounted) {
@@ -1380,14 +1394,24 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen>
   Future<void> _downloadResource(ResourceModel resource) async {
     try {
       final url = Uri.parse(resource.fileUrl);
-      if (await canLaunchUrl(url)) {
-        await launchUrl(url, mode: LaunchMode.externalApplication);
-      } else {
-        throw 'Could not open file';
+
+      final launched = await launchUrl(url, mode: LaunchMode.platformDefault);
+
+      if (!launched) {
+        final launchedExternal = await launchUrl(
+          url,
+          mode: LaunchMode.externalApplication,
+        );
+
+        if (!launchedExternal) {
+          throw 'Could not open file. Please check if you have a PDF viewer installed.';
+        }
       }
     } catch (e) {
       AppLogger.error('Failed to download resource', e, StackTrace.current);
-      _showErrorSnackBar('Failed to open file: $e');
+      if (mounted) {
+        _showErrorSnackBar('Failed to open file: $e');
+      }
     }
   }
 

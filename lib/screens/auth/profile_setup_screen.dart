@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:study_circle/models/user_model.dart';
 import 'package:study_circle/providers/auth_provider.dart' as app_auth;
+import 'package:study_circle/services/gamification_service.dart';
 import 'package:study_circle/theme/app_colors.dart';
 import 'package:study_circle/utils/constants.dart';
 
@@ -92,6 +93,12 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen>
 
     final authProvider = context.read<app_auth.AuthProvider>();
     final success = await authProvider.createUserProfile(userModel);
+
+    // Initialize gamification for new user
+    if (success) {
+      final gamificationService = GamificationService();
+      await gamificationService.initializeForNewUser(widget.user.uid);
+    }
 
     if (!mounted) return;
 

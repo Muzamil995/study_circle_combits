@@ -17,6 +17,9 @@ import 'package:study_circle/screens/sessions/sessions_list_screen.dart';
 import 'package:study_circle/screens/sessions/create_session_screen.dart';
 import 'package:study_circle/screens/profile/edit_profile_screen.dart';
 import 'package:study_circle/screens/profile/change_password_screen.dart';
+import 'package:study_circle/screens/achievements/achievements_screen.dart';
+import 'package:study_circle/screens/calendar/calendar_screen.dart';
+import 'package:study_circle/screens/analytics/group_analytics_screen.dart';
 import 'package:study_circle/models/study_group_model.dart';
 import 'package:study_circle/models/study_session_model.dart';
 
@@ -96,6 +99,14 @@ class MyApp extends StatelessWidget {
               },
               '/edit-profile': (context) => const EditProfileScreen(),
               '/change-password': (context) => const ChangePasswordScreen(),
+              '/achievements': (context) => const AchievementsScreen(),
+              '/calendar': (context) => const CalendarScreen(),
+              '/group-analytics': (context) {
+                final group =
+                    ModalRoute.of(context)!.settings.arguments
+                        as StudyGroupModel;
+                return GroupAnalyticsScreen(group: group);
+              },
             },
           );
         },
