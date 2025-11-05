@@ -29,6 +29,7 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen>
   final FirestoreService _firestoreService = FirestoreService();
   late TabController _tabController;
   bool _isLoading = false;
+  ScaffoldMessengerState? _scaffoldMessenger;
 
   @override
   void initState() {
@@ -39,6 +40,12 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen>
         setState(() {});
       }
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _scaffoldMessenger = ScaffoldMessenger.of(context);
   }
 
   @override
