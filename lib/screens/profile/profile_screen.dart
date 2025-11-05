@@ -14,9 +14,7 @@ class ProfileScreen extends StatelessWidget {
     final user = authProvider.userModel;
 
     if (user == null) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     return Scaffold(
@@ -50,7 +48,10 @@ class ProfileScreen extends StatelessWidget {
         background: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: [AppColors.primary, AppColors.primary.withValues(alpha: 0.8)],
+              colors: [
+                AppColors.primary,
+                AppColors.primary.withValues(alpha: 0.8),
+              ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
@@ -59,11 +60,11 @@ class ProfileScreen extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const SizedBox(height: 20),
+                const SizedBox(height: 25),
                 Stack(
                   children: [
                     CircleAvatar(
-                      radius: 55,
+                      radius: 50,
                       backgroundColor: Colors.white,
                       child: user.profileImageUrl.isNotEmpty
                           ? ClipOval(
@@ -74,7 +75,9 @@ class ProfileScreen extends StatelessWidget {
                                 fit: BoxFit.cover,
                                 errorBuilder: (context, error, stackTrace) {
                                   return Text(
-                                    user.name.isNotEmpty ? user.name[0].toUpperCase() : 'U',
+                                    user.name.isNotEmpty
+                                        ? user.name[0].toUpperCase()
+                                        : 'U',
                                     style: TextStyle(
                                       fontSize: 40,
                                       fontWeight: FontWeight.bold,
@@ -86,7 +89,9 @@ class ProfileScreen extends StatelessWidget {
                               ),
                             )
                           : Text(
-                              user.name.isNotEmpty ? user.name[0].toUpperCase() : 'U',
+                              user.name.isNotEmpty
+                                  ? user.name[0].toUpperCase()
+                                  : 'U',
                               style: TextStyle(
                                 fontSize: 40,
                                 fontWeight: FontWeight.bold,
@@ -110,19 +115,13 @@ class ProfileScreen extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   user.email,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: Colors.white70,
-                  ),
+                  style: const TextStyle(fontSize: 14, color: Colors.white70),
                 ),
                 if (user.department.isNotEmpty) ...[
                   const SizedBox(height: 4),
                   Text(
                     user.department,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: Colors.white60,
-                    ),
+                    style: const TextStyle(fontSize: 13, color: Colors.white60),
                   ),
                 ],
               ],
@@ -193,10 +192,7 @@ class ProfileScreen extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               label,
-              style: TextStyle(
-                fontSize: 12,
-                color: AppColors.gray600,
-              ),
+              style: TextStyle(fontSize: 12, color: AppColors.gray600),
             ),
           ],
         ),
@@ -228,21 +224,30 @@ class ProfileScreen extends StatelessWidget {
                 },
                 icon: const Icon(Icons.edit, size: 18),
                 label: const Text('Edit'),
-                style: TextButton.styleFrom(
-                  foregroundColor: AppColors.primary,
-                ),
+                style: TextButton.styleFrom(foregroundColor: AppColors.primary),
               ),
             ],
           ),
           const SizedBox(height: 16),
           _buildInfoRow(Icons.person, 'Name', user.name),
           _buildInfoRow(Icons.email, 'Email', user.email),
-          _buildInfoRow(Icons.school, 'Department', user.department.isNotEmpty ? user.department : 'Not provided'),
+          _buildInfoRow(
+            Icons.school,
+            'Department',
+            user.department.isNotEmpty ? user.department : 'Not provided',
+          ),
           _buildInfoRow(Icons.calendar_today, 'Year', user.year.toString()),
-          _buildInfoRow(Icons.format_list_numbered, 'Semester', 'Semester ${user.semester}'),
-          _buildInfoRow(Icons.phone, 'Phone', user.phoneNumber.isNotEmpty ? user.phoneNumber : 'Not provided'),
-          if (user.bio.isNotEmpty)
-            _buildInfoRow(Icons.info, 'Bio', user.bio),
+          _buildInfoRow(
+            Icons.format_list_numbered,
+            'Semester',
+            'Semester ${user.semester}',
+          ),
+          _buildInfoRow(
+            Icons.phone,
+            'Phone',
+            user.phoneNumber.isNotEmpty ? user.phoneNumber : 'Not provided',
+          ),
+          if (user.bio.isNotEmpty) _buildInfoRow(Icons.info, 'Bio', user.bio),
         ],
       ),
     );
@@ -268,10 +273,7 @@ class ProfileScreen extends StatelessWidget {
               children: [
                 Text(
                   label,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: AppColors.gray600,
-                  ),
+                  style: TextStyle(fontSize: 12, color: AppColors.gray600),
                 ),
                 const SizedBox(height: 2),
                 Text(
@@ -334,7 +336,9 @@ class ProfileScreen extends StatelessWidget {
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Notifications settings coming soon!')),
+                const SnackBar(
+                  content: Text('Notifications settings coming soon!'),
+                ),
               );
             },
           ),
@@ -370,10 +374,7 @@ class ProfileScreen extends StatelessWidget {
         ),
         child: Icon(icon, size: 20, color: AppColors.gray600),
       ),
-      title: Text(
-        title,
-        style: const TextStyle(fontWeight: FontWeight.w500),
-      ),
+      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
       trailing: trailing,
       onTap: onTap,
       contentPadding: EdgeInsets.zero,
