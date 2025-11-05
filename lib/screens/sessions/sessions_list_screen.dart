@@ -32,8 +32,22 @@ class _SessionsListScreenState extends State<SessionsListScreen> {
       appBar: AppBar(
         title: const Text(
           'Study Sessions',
-          style: TextStyle(fontWeight: FontWeight.bold, fontFamily: 'Poppins'),
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontFamily: 'Poppins',
+            color: Colors.white,
+          ),
         ),
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [AppColors.primary, AppColors.primaryLight],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: Column(
         children: [
@@ -113,42 +127,102 @@ class _SessionsListScreenState extends State<SessionsListScreen> {
           ? FloatingActionButton.extended(
               onPressed: () => _navigateToCreateSession(),
               backgroundColor: AppColors.primary,
-              icon: const Icon(Icons.add),
-              label: const Text('New Session'),
+              elevation: 6,
+              icon: const Icon(Icons.add, color: Colors.white),
+              label: const Text(
+                'New Session',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             )
           : null,
     );
   }
 
   Widget _buildGroupInfo() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.primary.withValues(alpha: 0.1),
-        border: Border(
-          bottom: BorderSide(color: AppColors.primary.withValues(alpha: 0.3)),
+        gradient: LinearGradient(
+          colors: [
+            AppColors.primary.withValues(alpha: 0.15),
+            AppColors.primaryLight.withValues(alpha: 0.1),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
+        border: Border(
+          bottom: BorderSide(
+            color: AppColors.primary.withValues(alpha: 0.3),
+            width: 2,
+          ),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withValues(alpha: 0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
         children: [
-          Icon(Icons.group, color: AppColors.primary, size: 28),
-          const SizedBox(width: 12),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [AppColors.primary, AppColors.primaryLight],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.primary.withValues(alpha: 0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: const Icon(Icons.group, color: Colors.white, size: 28),
+          ),
+          const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   widget.group.name,
-                  style: const TextStyle(
-                    fontSize: 16,
+                  style: TextStyle(
+                    fontSize: 17,
                     fontWeight: FontWeight.bold,
                     fontFamily: 'Poppins',
+                    color: isDark ? Colors.white : AppColors.gray800,
                   ),
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  widget.group.courseCode,
-                  style: TextStyle(fontSize: 13, color: AppColors.gray600),
+                const SizedBox(height: 4),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [AppColors.primary, AppColors.primaryLight],
+                      begin: Alignment.centerLeft,
+                      end: Alignment.centerRight,
+                    ),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    widget.group.courseCode,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -159,30 +233,71 @@ class _SessionsListScreenState extends State<SessionsListScreen> {
   }
 
   Widget _buildSectionHeader(String title, int count) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Row(
       children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [AppColors.primary, AppColors.primaryLight],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(10),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primary.withValues(alpha: 0.3),
+                blurRadius: 6,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: Icon(
+            title.contains('Upcoming') ? Icons.event : Icons.history,
+            color: Colors.white,
+            size: 20,
+          ),
+        ),
+        const SizedBox(width: 12),
         Text(
           title,
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: AppColors.gray800,
+            color: isDark ? Colors.white : AppColors.gray800,
             fontFamily: 'Poppins',
           ),
         ),
         const SizedBox(width: 8),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(
-            color: AppColors.primary.withValues(alpha: 0.1),
+            gradient: LinearGradient(
+              colors: [AppColors.primary, AppColors.primaryLight],
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+            ),
             borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: AppColors.primary.withValues(alpha: 0.3),
+              width: 1.5,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primary.withValues(alpha: 0.2),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
           child: Text(
             count.toString(),
-            style: TextStyle(
-              fontSize: 12,
+            style: const TextStyle(
+              fontSize: 13,
               fontWeight: FontWeight.bold,
-              color: AppColors.primary,
+              color: Colors.white,
             ),
           ),
         ),
@@ -289,77 +404,178 @@ class _SessionCard extends StatelessWidget {
         : null;
     final dateFormat = DateFormat('MMM dd, yyyy');
     final timeFormat = DateFormat('h:mm a');
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: isPast ? AppColors.gray300 : AppColors.gray200),
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: isPast 
+              ? AppColors.gray300 
+              : AppColors.primary.withValues(alpha: 0.3),
+          width: 1.5,
+        ),
       ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: () {
-          Navigator.pushNamed(
-            context,
-            '/session-details',
-            arguments: {'session': session, 'group': group},
-          );
-        },
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          session.title,
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            fontFamily: 'Poppins',
-                            color: isPast
-                                ? AppColors.gray600
-                                : AppColors.gray800,
-                          ),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          gradient: LinearGradient(
+            colors: isPast
+                ? [
+                    AppColors.gray100.withValues(alpha: 0.5),
+                    AppColors.gray50.withValues(alpha: 0.3),
+                  ]
+                : [
+                    AppColors.primary.withValues(alpha: 0.05),
+                    AppColors.primaryLight.withValues(alpha: 0.02),
+                  ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          boxShadow: isPast
+              ? []
+              : [
+                  BoxShadow(
+                    color: AppColors.primary.withValues(alpha: 0.1),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+        ),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: () {
+            Navigator.pushNamed(
+              context,
+              '/session-details',
+              arguments: {'session': session, 'group': group},
+            );
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: isPast
+                              ? [AppColors.gray400, AppColors.gray500]
+                              : [AppColors.primary, AppColors.primaryLight],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          session.topic,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: isPast
-                                ? AppColors.gray500
-                                : AppColors.primary,
-                            fontWeight: FontWeight.w500,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: (isPast ? AppColors.gray400 : AppColors.primary)
+                                .withValues(alpha: 0.3),
+                            blurRadius: 6,
+                            offset: const Offset(0, 3),
                           ),
-                        ),
+                        ],
+                      ),
+                      child: Icon(
+                        isPast ? Icons.history : Icons.event_note,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            session.title,
+                            style: TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: 'Poppins',
+                              color: isPast
+                                  ? AppColors.gray600
+                                  : (isDark ? Colors.white : AppColors.gray800),
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: isPast
+                                    ? [
+                                        AppColors.gray400.withValues(alpha: 0.3),
+                                        AppColors.gray500.withValues(alpha: 0.2),
+                                      ]
+                                    : [AppColors.primary, AppColors.primaryLight],
+                                begin: Alignment.centerLeft,
+                                end: Alignment.centerRight,
+                              ),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              session.topic,
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: isPast ? AppColors.gray600 : Colors.white,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (userRsvpStatus != null) _buildRsvpBadge(userRsvpStatus),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  height: 1,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        AppColors.gray300.withValues(alpha: 0.3),
+                        AppColors.gray400.withValues(alpha: 0.1),
                       ],
                     ),
                   ),
-                  if (userRsvpStatus != null) _buildRsvpBadge(userRsvpStatus),
-                ],
-              ),
-              const SizedBox(height: 12),
-              _buildInfoRow(
-                Icons.calendar_today,
-                dateFormat.format(session.dateTime),
-              ),
-              const SizedBox(height: 8),
-              _buildInfoRow(
-                Icons.access_time,
-                '${timeFormat.format(session.dateTime)} • ${session.durationMinutes} min',
-              ),
-              const SizedBox(height: 8),
-              _buildInfoRow(Icons.location_on, session.location),
-              const SizedBox(height: 12),
-              _buildRsvpSummary(),
-            ],
+                ),
+                const SizedBox(height: 16),
+                _buildInfoRow(
+                  Icons.calendar_today,
+                  dateFormat.format(session.dateTime),
+                ),
+                const SizedBox(height: 8),
+                _buildInfoRow(
+                  Icons.access_time,
+                  '${timeFormat.format(session.dateTime)} • ${session.durationMinutes} min',
+                ),
+                const SizedBox(height: 8),
+                _buildInfoRow(Icons.location_on, session.location),
+                const SizedBox(height: 16),
+                Container(
+                  height: 1,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        AppColors.gray300.withValues(alpha: 0.3),
+                        AppColors.gray400.withValues(alpha: 0.1),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                _buildRsvpSummary(),
+              ],
+            ),
           ),
         ),
       ),
@@ -390,22 +606,40 @@ class _SessionCard extends StatelessWidget {
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
+        gradient: LinearGradient(
+          colors: [
+            color.withValues(alpha: 0.2),
+            color.withValues(alpha: 0.1),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
         borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: color.withValues(alpha: 0.4),
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: color.withValues(alpha: 0.2),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: color),
-          const SizedBox(width: 4),
+          Icon(icon, size: 16, color: color),
+          const SizedBox(width: 6),
           Text(
             label,
             style: TextStyle(
               fontSize: 12,
               color: color,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w700,
             ),
           ),
         ],
@@ -453,22 +687,33 @@ class _SessionCard extends StatelessWidget {
 
   Widget _buildRsvpCount(IconData icon, int count, Color color) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(8),
+        gradient: LinearGradient(
+          colors: [
+            color.withValues(alpha: 0.15),
+            color.withValues(alpha: 0.08),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: color.withValues(alpha: 0.3),
+          width: 1.5,
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: color),
-          const SizedBox(width: 4),
+          Icon(icon, size: 16, color: color),
+          const SizedBox(width: 6),
           Text(
             count.toString(),
             style: TextStyle(
-              fontSize: 12,
+              fontSize: 13,
               color: color,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.bold,
             ),
           ),
         ],
