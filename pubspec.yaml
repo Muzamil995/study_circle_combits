@@ -15,11 +15,10 @@ dependencies:
   cupertino_icons: ^1.0.8
   logger: ^2.6.2
   
-  # Firebase
+  # Firebase (Auth + Firestore only - Storage uses Cloudinary)
   firebase_core: ^4.2.1
   firebase_auth: ^6.1.2
   cloud_firestore: ^6.1.0
-  firebase_storage: ^13.0.4
   
   # Cloudinary
   cloudinary_sdk: ^5.0.0+1
