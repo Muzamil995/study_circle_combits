@@ -9,6 +9,10 @@ import 'package:study_circle/utils/constants.dart';
 import 'package:study_circle/providers/theme_provider.dart';
 import 'package:study_circle/providers/auth_provider.dart';
 import 'package:study_circle/screens/auth/login_screen.dart';
+import 'package:study_circle/screens/home/home_screen.dart';
+import 'package:study_circle/screens/groups/create_group_screen.dart';
+import 'package:study_circle/screens/groups/group_details_screen.dart';
+import 'package:study_circle/models/study_group_model.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -47,6 +51,17 @@ class MyApp extends StatelessWidget {
             darkTheme: AppTheme.darkTheme,
             themeMode: themeProvider.themeMode,
             home: const AuthWrapper(),
+            routes: {
+              '/create-group': (context) => const CreateGroupScreen(),
+              '/group-details': (context) {
+                final groupId = ModalRoute.of(context)!.settings.arguments as String;
+                return GroupDetailsScreen(groupId: groupId);
+              },
+              '/edit-group': (context) {
+                final group = ModalRoute.of(context)!.settings.arguments as StudyGroupModel;
+                return CreateGroupScreen(group: group);
+              },
+            },
           );
         },
       ),
@@ -69,11 +84,7 @@ class AuthWrapper extends StatelessWidget {
         // Navigate based on auth status
         if (authProvider.isAuthenticated && authProvider.userModel != null) {
           // User is authenticated - navigate to home
-          return const Scaffold(
-            body: Center(
-              child: Text('Home Screen - Coming Soon!'),
-            ),
-          );
+          return const HomeScreen();
         } else {
           // User is not authenticated - show login
           return const LoginScreen();

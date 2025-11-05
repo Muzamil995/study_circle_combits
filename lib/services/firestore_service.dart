@@ -131,7 +131,6 @@ class FirestoreService {
   Stream<List<StudyGroupModel>> getPublicGroups() {
     return _groupsCollection
         .where('isPublic', isEqualTo: true)
-        .where('status', isEqualTo: 'active')
         .orderBy('createdAt', descending: true)
         .snapshots()
         .map((snapshot) => snapshot.docs
@@ -143,7 +142,6 @@ class FirestoreService {
   Stream<List<StudyGroupModel>> getUserGroups(String userId) {
     return _groupsCollection
         .where('memberIds', arrayContains: userId)
-        .where('status', isEqualTo: 'active')
         .orderBy('createdAt', descending: true)
         .snapshots()
         .map((snapshot) => snapshot.docs
@@ -157,7 +155,6 @@ class FirestoreService {
       final queryLower = query.toLowerCase();
       final snapshot = await _groupsCollection
           .where('isPublic', isEqualTo: true)
-          .where('status', isEqualTo: 'active')
           .get();
 
       // Filter by name or course code
@@ -182,6 +179,158 @@ class FirestoreService {
     } catch (e, stackTrace) {
       AppLogger.error('Failed to delete study group', e, stackTrace);
       throw 'Failed to delete group. Please try again.';
+    }
+  }
+
+  // Join a public group (instant join)
+  Future<void> joinGroup(String groupId, String userId) async {
+    try {
+      AppLogger.info('User $userId joining group $groupId');
+      
+      // Get the group document
+      final groupDoc = await _groupsCollection.doc(groupId).get();
+      if (!groupDoc.exists) {
+        throw 'Group not found.';
+      }
+      
+      final group = StudyGroupModel.fromFirestore(groupDoc);
+      
+      // Check if already a member
+      if (group.memberIds.contains(userId)) {
+        throw 'You are already a member of this group.';
+      }
+      
+      // Check if group is full
+      if (group.isFull) {
+        throw 'This group is full.';
+      }
+      
+      // Add user to group members using Firestore arrayUnion
+      await _groupsCollection.doc(groupId).update({
+        'memberIds': FieldValue.arrayUnion([userId]),
+      });
+      
+      // Update user's joined groups
+      await _usersCollection.doc(userId).update({
+        'joinedGroupIds': FieldValue.arrayUnion([groupId]),
+      });
+      
+      AppLogger.info('User joined group successfully');
+    } catch (e, stackTrace) {
+      AppLogger.error('Failed to join group', e, stackTrace);
+      if (e is String) rethrow;
+      throw 'Failed to join group. Please try again.';
+    }
+  }
+
+  // Leave a group
+  Future<void> leaveGroup(String groupId, String userId) async {
+    try {
+      AppLogger.info('User $userId leaving group $groupId');
+      
+      // Get the group document
+      final groupDoc = await _groupsCollection.doc(groupId).get();
+      if (!groupDoc.exists) {
+        throw 'Group not found.';
+      }
+      
+      final group = StudyGroupModel.fromFirestore(groupDoc);
+      
+      // Check if user is the creator
+      if (group.creatorId == userId) {
+        throw 'Group creators cannot leave their own group. Please delete the group instead.';
+      }
+      
+      // Remove user from group members using Firestore arrayRemove
+      await _groupsCollection.doc(groupId).update({
+        'memberIds': FieldValue.arrayRemove([userId]),
+      });
+      
+      // Update user's joined groups
+      await _usersCollection.doc(userId).update({
+        'joinedGroupIds': FieldValue.arrayRemove([groupId]),
+      });
+      
+      AppLogger.info('User left group successfully');
+    } catch (e, stackTrace) {
+      AppLogger.error('Failed to leave group', e, stackTrace);
+      if (e is String) rethrow;
+      throw 'Failed to leave group. Please try again.';
+    }
+  }
+
+  // Check if user has a pending join request for a group
+  Future<bool> hasPendingJoinRequest(String groupId, String userId) async {
+    try {
+      final snapshot = await _requestsCollection
+          .where('groupId', isEqualTo: groupId)
+          .where('userId', isEqualTo: userId)
+          .where('status', isEqualTo: 'pending')
+          .limit(1)
+          .get();
+      
+      return snapshot.docs.isNotEmpty;
+    } catch (e, stackTrace) {
+      AppLogger.error('Failed to check join request', e, stackTrace);
+      return false;
+    }
+  }
+
+  // Approve join request
+  Future<void> approveJoinRequest(String requestId, String groupId, String userId) async {
+    try {
+      AppLogger.info('Approving join request: $requestId');
+      
+      // Get the group to check if it's full
+      final groupDoc = await _groupsCollection.doc(groupId).get();
+      if (!groupDoc.exists) {
+        throw 'Group not found.';
+      }
+      
+      final group = StudyGroupModel.fromFirestore(groupDoc);
+      
+      if (group.isFull) {
+        throw 'This group is full.';
+      }
+      
+      // Update request status
+      await _requestsCollection.doc(requestId).update({
+        'status': 'approved',
+        'respondedAt': FieldValue.serverTimestamp(),
+      });
+      
+      // Add user to group
+      await _groupsCollection.doc(groupId).update({
+        'memberIds': FieldValue.arrayUnion([userId]),
+      });
+      
+      // Update user's joined groups
+      await _usersCollection.doc(userId).update({
+        'joinedGroupIds': FieldValue.arrayUnion([groupId]),
+      });
+      
+      AppLogger.info('Join request approved successfully');
+    } catch (e, stackTrace) {
+      AppLogger.error('Failed to approve join request', e, stackTrace);
+      if (e is String) rethrow;
+      throw 'Failed to approve request. Please try again.';
+    }
+  }
+
+  // Reject join request
+  Future<void> rejectJoinRequest(String requestId) async {
+    try {
+      AppLogger.info('Rejecting join request: $requestId');
+      
+      await _requestsCollection.doc(requestId).update({
+        'status': 'rejected',
+        'respondedAt': FieldValue.serverTimestamp(),
+      });
+      
+      AppLogger.info('Join request rejected successfully');
+    } catch (e, stackTrace) {
+      AppLogger.error('Failed to reject join request', e, stackTrace);
+      throw 'Failed to reject request. Please try again.';
     }
   }
 

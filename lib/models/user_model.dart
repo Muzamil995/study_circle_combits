@@ -9,6 +9,8 @@ class UserModel {
   final int semester;
   final int year;
   final String profileImageUrl;
+  final String phoneNumber;
+  final String bio;
   final List<String> joinedGroupIds;
   final List<String> createdGroupIds;
   final List<String> upcomingSessionIds;
@@ -25,6 +27,8 @@ class UserModel {
     required this.semester,
     required this.year,
     this.profileImageUrl = '',
+    this.phoneNumber = '',
+    this.bio = '',
     List<String>? joinedGroupIds,
     List<String>? createdGroupIds,
     List<String>? upcomingSessionIds,
@@ -50,6 +54,8 @@ class UserModel {
       semester: data['semester'] ?? 1,
       year: data['year'] ?? 2024,
       profileImageUrl: data['profileImageUrl'] ?? '',
+      phoneNumber: data['phoneNumber'] ?? '',
+      bio: data['bio'] ?? '',
       joinedGroupIds: List<String>.from(data['joinedGroupIds'] ?? []),
       createdGroupIds: List<String>.from(data['createdGroupIds'] ?? []),
       upcomingSessionIds: List<String>.from(data['upcomingSessionIds'] ?? []),
@@ -70,6 +76,8 @@ class UserModel {
       semester: data['semester'] ?? 1,
       year: data['year'] ?? 2024,
       profileImageUrl: data['profileImageUrl'] ?? '',
+      phoneNumber: data['phoneNumber'] ?? '',
+      bio: data['bio'] ?? '',
       joinedGroupIds: List<String>.from(data['joinedGroupIds'] ?? []),
       createdGroupIds: List<String>.from(data['createdGroupIds'] ?? []),
       upcomingSessionIds: List<String>.from(data['upcomingSessionIds'] ?? []),
@@ -90,6 +98,8 @@ class UserModel {
       'semester': semester,
       'year': year,
       'profileImageUrl': profileImageUrl,
+      'phoneNumber': phoneNumber,
+      'bio': bio,
       'joinedGroupIds': joinedGroupIds,
       'createdGroupIds': createdGroupIds,
       'upcomingSessionIds': upcomingSessionIds,
@@ -110,6 +120,8 @@ class UserModel {
       'semester': semester,
       'year': year,
       'profileImageUrl': profileImageUrl,
+      'phoneNumber': phoneNumber,
+      'bio': bio,
       'joinedGroupIds': joinedGroupIds,
       'createdGroupIds': createdGroupIds,
       'upcomingSessionIds': upcomingSessionIds,
@@ -129,6 +141,8 @@ class UserModel {
     int? semester,
     int? year,
     String? profileImageUrl,
+    String? phoneNumber,
+    String? bio,
     List<String>? joinedGroupIds,
     List<String>? createdGroupIds,
     List<String>? upcomingSessionIds,
@@ -145,6 +159,8 @@ class UserModel {
       semester: semester ?? this.semester,
       year: year ?? this.year,
       profileImageUrl: profileImageUrl ?? this.profileImageUrl,
+      phoneNumber: phoneNumber ?? this.phoneNumber,
+      bio: bio ?? this.bio,
       joinedGroupIds: joinedGroupIds ?? this.joinedGroupIds,
       createdGroupIds: createdGroupIds ?? this.createdGroupIds,
       upcomingSessionIds: upcomingSessionIds ?? this.upcomingSessionIds,
