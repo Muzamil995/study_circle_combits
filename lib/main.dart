@@ -124,12 +124,10 @@ class MyApp extends StatelessWidget {
                 return AskQuestionScreen(group: group);
               },
               '/question-details': (context) {
-                final args =
+                final question =
                     ModalRoute.of(context)!.settings.arguments
-                        as Map<String, dynamic>;
-                return QuestionDetailsScreen(
-                  question: args['question'] as QuestionModel,
-                );
+                        as QuestionModel;
+                return QuestionDetailsScreen(question: question);
               },
             },
           );
