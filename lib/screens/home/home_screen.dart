@@ -183,7 +183,7 @@ class _DashboardTab extends StatelessWidget {
 
   Widget _buildStatsCards() {
     final firestoreService = FirestoreService();
-    
+
     return Row(
       children: [
         Expanded(
@@ -254,7 +254,7 @@ class _DashboardTab extends StatelessWidget {
 
   Widget _buildUpcomingSessions() {
     final firestoreService = FirestoreService();
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -298,7 +298,7 @@ class _DashboardTab extends StatelessWidget {
             }
 
             final sessions = snapshot.data ?? [];
-            
+
             if (sessions.isEmpty) {
               return _buildEmptyState(
                 icon: Icons.event_busy,
@@ -308,7 +308,7 @@ class _DashboardTab extends StatelessWidget {
 
             // Show first 3 sessions
             final displaySessions = sessions.take(3).toList();
-            
+
             return Column(
               children: displaySessions.map((session) {
                 return Padding(
@@ -508,9 +508,7 @@ class _SessionPreviewCard extends StatelessWidget {
           decoration: BoxDecoration(
             color: AppColors.info.withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: AppColors.info.withValues(alpha: 0.2),
-            ),
+            border: Border.all(color: AppColors.info.withValues(alpha: 0.2)),
           ),
           child: InkWell(
             onTap: group != null
@@ -531,11 +529,7 @@ class _SessionPreviewCard extends StatelessWidget {
                     color: AppColors.info.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Icon(
-                    Icons.event,
-                    color: AppColors.info,
-                    size: 24,
-                  ),
+                  child: Icon(Icons.event, color: AppColors.info, size: 24),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -575,11 +569,7 @@ class _SessionPreviewCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                Icon(
-                  Icons.chevron_right,
-                  color: AppColors.gray400,
-                  size: 20,
-                ),
+                Icon(Icons.chevron_right, color: AppColors.gray400, size: 20),
               ],
             ),
           ),

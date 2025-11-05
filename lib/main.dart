@@ -20,8 +20,12 @@ import 'package:study_circle/screens/profile/change_password_screen.dart';
 import 'package:study_circle/screens/achievements/achievements_screen.dart';
 import 'package:study_circle/screens/calendar/calendar_screen.dart';
 import 'package:study_circle/screens/analytics/group_analytics_screen.dart';
+import 'package:study_circle/screens/qna/qna_list_screen.dart';
+import 'package:study_circle/screens/qna/ask_question_screen.dart';
+import 'package:study_circle/screens/qna/question_details_screen.dart';
 import 'package:study_circle/models/study_group_model.dart';
 import 'package:study_circle/models/study_session_model.dart';
+import 'package:study_circle/models/question_model.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -106,6 +110,26 @@ class MyApp extends StatelessWidget {
                     ModalRoute.of(context)!.settings.arguments
                         as StudyGroupModel;
                 return GroupAnalyticsScreen(group: group);
+              },
+              '/qna-list': (context) {
+                final group =
+                    ModalRoute.of(context)!.settings.arguments
+                        as StudyGroupModel;
+                return QnaListScreen(group: group);
+              },
+              '/ask-question': (context) {
+                final group =
+                    ModalRoute.of(context)!.settings.arguments
+                        as StudyGroupModel;
+                return AskQuestionScreen(group: group);
+              },
+              '/question-details': (context) {
+                final args =
+                    ModalRoute.of(context)!.settings.arguments
+                        as Map<String, dynamic>;
+                return QuestionDetailsScreen(
+                  question: args['question'] as QuestionModel,
+                );
               },
             },
           );

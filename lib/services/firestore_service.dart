@@ -8,6 +8,8 @@ import 'package:study_circle/models/rsvp_model.dart';
 import 'package:study_circle/models/achievement_model.dart';
 import 'package:study_circle/models/user_stats_model.dart';
 import 'package:study_circle/models/group_analytics_model.dart';
+import 'package:study_circle/models/question_model.dart';
+import 'package:study_circle/models/answer_model.dart';
 import 'package:study_circle/services/gamification_service.dart';
 import 'package:study_circle/utils/logger.dart';
 
@@ -23,6 +25,8 @@ class FirestoreService {
   CollectionReference get _achievementsCollection => _firestore.collection('achievements');
   CollectionReference get _userStatsCollection => _firestore.collection('user_stats');
   CollectionReference get _groupAnalyticsCollection => _firestore.collection('group_analytics');
+  CollectionReference get _questionsCollection => _firestore.collection('questions');
+  CollectionReference get _answersCollection => _firestore.collection('answers');
 
   // ==================== USER OPERATIONS ====================
 
@@ -967,6 +971,300 @@ class FirestoreService {
       AppLogger.info('Group analytics updated successfully');
     } catch (e, stackTrace) {
       AppLogger.error('Failed to update group analytics', e, stackTrace);
+    }
+  }
+
+  // ==================== Q&A OPERATIONS ====================
+
+  // Create a new question
+  Future<String> createQuestion({
+    required String groupId,
+    required String title,
+    required String description,
+    required String userId,
+    required String userName,
+  }) async {
+    try {
+      AppLogger.info('Creating question for group: $groupId');
+      
+      final question = QuestionModel(
+        id: '',
+        groupId: groupId,
+        title: title,
+        description: description,
+        askedBy: userId,
+        askedByName: userName,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+
+      final docRef = await _questionsCollection.add(question.toFirestore());
+      AppLogger.info('Question created successfully: ${docRef.id}');
+      
+      return docRef.id;
+    } catch (e, stackTrace) {
+      AppLogger.error('Failed to create question', e, stackTrace);
+      throw 'Failed to post question. Please try again.';
+    }
+  }
+
+  // Get questions for a group
+  Stream<List<QuestionModel>> getGroupQuestions(String groupId) {
+    return _questionsCollection
+        .where('groupId', isEqualTo: groupId)
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+            .map((doc) => QuestionModel.fromFirestore(doc))
+            .toList());
+  }
+
+  // Get a single question
+  Future<QuestionModel?> getQuestionById(String questionId) async {
+    try {
+      final doc = await _questionsCollection.doc(questionId).get();
+      if (doc.exists) {
+        return QuestionModel.fromFirestore(doc);
+      }
+      return null;
+    } catch (e, stackTrace) {
+      AppLogger.error('Failed to get question', e, stackTrace);
+      return null;
+    }
+  }
+
+  // Toggle question upvote
+  Future<void> toggleQuestionUpvote(String questionId, String userId) async {
+    try {
+      final question = await getQuestionById(questionId);
+      if (question == null) return;
+
+      List<String> upvotedBy = List.from(question.upvotedBy);
+      List<String> downvotedBy = List.from(question.downvotedBy);
+
+      // Remove from downvotes if exists
+      downvotedBy.remove(userId);
+
+      // Toggle upvote
+      if (upvotedBy.contains(userId)) {
+        upvotedBy.remove(userId);
+      } else {
+        upvotedBy.add(userId);
+      }
+
+      await _questionsCollection.doc(questionId).update({
+        'upvotedBy': upvotedBy,
+        'downvotedBy': downvotedBy,
+        'updatedAt': Timestamp.now(),
+      });
+
+      AppLogger.info('Question upvote toggled');
+    } catch (e, stackTrace) {
+      AppLogger.error('Failed to toggle question upvote', e, stackTrace);
+      throw 'Failed to update vote. Please try again.';
+    }
+  }
+
+  // Toggle question downvote
+  Future<void> toggleQuestionDownvote(String questionId, String userId) async {
+    try {
+      final question = await getQuestionById(questionId);
+      if (question == null) return;
+
+      List<String> upvotedBy = List.from(question.upvotedBy);
+      List<String> downvotedBy = List.from(question.downvotedBy);
+
+      // Remove from upvotes if exists
+      upvotedBy.remove(userId);
+
+      // Toggle downvote
+      if (downvotedBy.contains(userId)) {
+        downvotedBy.remove(userId);
+      } else {
+        downvotedBy.add(userId);
+      }
+
+      await _questionsCollection.doc(questionId).update({
+        'upvotedBy': upvotedBy,
+        'downvotedBy': downvotedBy,
+        'updatedAt': Timestamp.now(),
+      });
+
+      AppLogger.info('Question downvote toggled');
+    } catch (e, stackTrace) {
+      AppLogger.error('Failed to toggle question downvote', e, stackTrace);
+      throw 'Failed to update vote. Please try again.';
+    }
+  }
+
+  // Mark question as resolved
+  Future<void> markQuestionAsResolved(String questionId, bool isResolved) async {
+    try {
+      await _questionsCollection.doc(questionId).update({
+        'isResolved': isResolved,
+        'updatedAt': Timestamp.now(),
+      });
+      AppLogger.info('Question marked as ${isResolved ? 'resolved' : 'unresolved'}');
+    } catch (e, stackTrace) {
+      AppLogger.error('Failed to update question status', e, stackTrace);
+      throw 'Failed to update question. Please try again.';
+    }
+  }
+
+  // Create an answer
+  Future<String> createAnswer({
+    required String questionId,
+    required String groupId,
+    required String content,
+    required String userId,
+    required String userName,
+  }) async {
+    try {
+      AppLogger.info('Creating answer for question: $questionId');
+
+      final answer = AnswerModel(
+        id: '',
+        questionId: questionId,
+        groupId: groupId,
+        content: content,
+        answeredBy: userId,
+        answeredByName: userName,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+
+      final docRef = await _answersCollection.add(answer.toFirestore());
+
+      // Update question answer count
+      final question = await getQuestionById(questionId);
+      if (question != null) {
+        await _questionsCollection.doc(questionId).update({
+          'answerCount': question.answerCount + 1,
+          'updatedAt': Timestamp.now(),
+        });
+      }
+
+      AppLogger.info('Answer created successfully: ${docRef.id}');
+      return docRef.id;
+    } catch (e, stackTrace) {
+      AppLogger.error('Failed to create answer', e, stackTrace);
+      throw 'Failed to post answer. Please try again.';
+    }
+  }
+
+  // Get answers for a question (sorted by votes)
+  Stream<List<AnswerModel>> getQuestionAnswers(String questionId) {
+    return _answersCollection
+        .where('questionId', isEqualTo: questionId)
+        .snapshots()
+        .map((snapshot) {
+      final answers = snapshot.docs
+          .map((doc) => AnswerModel.fromFirestore(doc))
+          .toList();
+      
+      // Sort by: accepted first, then by vote score
+      answers.sort((a, b) {
+        if (a.isAccepted && !b.isAccepted) return -1;
+        if (!a.isAccepted && b.isAccepted) return 1;
+        return b.voteScore.compareTo(a.voteScore);
+      });
+      
+      return answers;
+    });
+  }
+
+  // Toggle answer upvote
+  Future<void> toggleAnswerUpvote(String answerId, String userId) async {
+    try {
+      final doc = await _answersCollection.doc(answerId).get();
+      if (!doc.exists) return;
+
+      final answer = AnswerModel.fromFirestore(doc);
+      List<String> upvotedBy = List.from(answer.upvotedBy);
+      List<String> downvotedBy = List.from(answer.downvotedBy);
+
+      // Remove from downvotes if exists
+      downvotedBy.remove(userId);
+
+      // Toggle upvote
+      if (upvotedBy.contains(userId)) {
+        upvotedBy.remove(userId);
+      } else {
+        upvotedBy.add(userId);
+      }
+
+      await _answersCollection.doc(answerId).update({
+        'upvotedBy': upvotedBy,
+        'downvotedBy': downvotedBy,
+        'updatedAt': Timestamp.now(),
+      });
+
+      AppLogger.info('Answer upvote toggled');
+    } catch (e, stackTrace) {
+      AppLogger.error('Failed to toggle answer upvote', e, stackTrace);
+      throw 'Failed to update vote. Please try again.';
+    }
+  }
+
+  // Toggle answer downvote
+  Future<void> toggleAnswerDownvote(String answerId, String userId) async {
+    try {
+      final doc = await _answersCollection.doc(answerId).get();
+      if (!doc.exists) return;
+
+      final answer = AnswerModel.fromFirestore(doc);
+      List<String> upvotedBy = List.from(answer.upvotedBy);
+      List<String> downvotedBy = List.from(answer.downvotedBy);
+
+      // Remove from upvotes if exists
+      upvotedBy.remove(userId);
+
+      // Toggle downvote
+      if (downvotedBy.contains(userId)) {
+        downvotedBy.remove(userId);
+      } else {
+        downvotedBy.add(userId);
+      }
+
+      await _answersCollection.doc(answerId).update({
+        'upvotedBy': upvotedBy,
+        'downvotedBy': downvotedBy,
+        'updatedAt': Timestamp.now(),
+      });
+
+      AppLogger.info('Answer downvote toggled');
+    } catch (e, stackTrace) {
+      AppLogger.error('Failed to toggle answer downvote', e, stackTrace);
+      throw 'Failed to update vote. Please try again.';
+    }
+  }
+
+  // Accept an answer (only question owner can do this)
+  Future<void> acceptAnswer(String questionId, String answerId) async {
+    try {
+      // Unaccept all previous answers for this question
+      final answersSnapshot = await _answersCollection
+          .where('questionId', isEqualTo: questionId)
+          .get();
+
+      final batch = _firestore.batch();
+      
+      for (final doc in answersSnapshot.docs) {
+        batch.update(doc.reference, {
+          'isAccepted': doc.id == answerId,
+          'updatedAt': Timestamp.now(),
+        });
+      }
+
+      await batch.commit();
+
+      // Mark question as resolved
+      await markQuestionAsResolved(questionId, true);
+
+      AppLogger.info('Answer accepted successfully');
+    } catch (e, stackTrace) {
+      AppLogger.error('Failed to accept answer', e, stackTrace);
+      throw 'Failed to accept answer. Please try again.';
     }
   }
 }

@@ -7,6 +7,7 @@ import 'package:study_circle/models/resource_model.dart';
 import 'package:study_circle/providers/auth_provider.dart' as app_auth;
 import 'package:study_circle/services/firestore_service.dart';
 import 'package:study_circle/screens/groups/join_requests_screen.dart';
+import 'package:study_circle/screens/qna/qna_list_screen.dart';
 import 'package:study_circle/theme/app_colors.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:study_circle/config/cloudinary_config.dart';
@@ -32,7 +33,7 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 5, vsync: this);
     _tabController.addListener(() {
       if (!_tabController.indexIsChanging) {
         setState(() {});
@@ -95,6 +96,7 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen>
                     _buildMembersTab(group),
                     _buildSessionsTab(group),
                     _buildResourcesTab(group),
+                    _buildQnaTab(group),
                   ],
                 ),
               ),
@@ -102,7 +104,7 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen>
           ),
           floatingActionButton:
               isMember &&
-                  (_tabController.index == 2 || _tabController.index == 3)
+                  (_tabController.index == 2 || _tabController.index == 3 || _tabController.index == 4)
               ? FloatingActionButton.extended(
                   onPressed: () {
                     if (_tabController.index == 2) {
@@ -113,14 +115,22 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen>
                       );
                     } else if (_tabController.index == 3) {
                       _showUploadResourceDialog(group, currentUser);
+                    } else if (_tabController.index == 4) {
+                      Navigator.pushNamed(
+                        context,
+                        '/ask-question',
+                        arguments: group,
+                      );
                     }
                   },
                   backgroundColor: AppColors.primary,
                   icon: Icon(
-                    _tabController.index == 2 ? Icons.add : Icons.upload_file,
+                    _tabController.index == 2 ? Icons.add : 
+                    _tabController.index == 3 ? Icons.upload_file : Icons.question_answer,
                   ),
                   label: Text(
-                    _tabController.index == 2 ? 'New Session' : 'Upload File',
+                    _tabController.index == 2 ? 'New Session' : 
+                    _tabController.index == 3 ? 'Upload File' : 'Ask Question',
                   ),
                 )
               : null,
@@ -374,6 +384,7 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen>
         Tab(text: 'Members'),
         Tab(text: 'Sessions'),
         Tab(text: 'Resources'),
+        Tab(text: 'Q&A'),
       ],
     );
   }
@@ -1439,5 +1450,9 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen>
         _showErrorSnackBar('Failed to delete resource: $e');
       }
     }
+  }
+
+  Widget _buildQnaTab(StudyGroupModel group) {
+    return QnaListScreen(group: group);
   }
 }
