@@ -98,7 +98,10 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen>
                     Navigator.pushNamed(
                       context,
                       '/create-session',
-                      arguments: group,
+                      arguments: {
+                        'group': group,
+                        'session': null,
+                      },
                     );
                   },
                   backgroundColor: AppColors.primary,
@@ -288,10 +291,16 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen>
                 'Visibility',
               ),
               const SizedBox(width: 12),
-              _buildStatBadge(
-                Icons.event,
-                '0',
-                'Sessions',
+              StreamBuilder<List<StudySessionModel>>(
+                stream: _firestoreService.getGroupSessions(group.id),
+                builder: (context, snapshot) {
+                  final sessionCount = snapshot.data?.length ?? 0;
+                  return _buildStatBadge(
+                    Icons.event,
+                    sessionCount.toString(),
+                    'Sessions',
+                  );
+                },
               ),
             ],
           ),
